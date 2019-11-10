@@ -2,7 +2,7 @@ import os
 from random import random
 
 from keras.models import Sequential
-from keras.layers import Dense, Activation, BatchNormalization, Dropout
+from keras.layers import Dense, Activation, BatchNormalization, Dropout, Flatten
 # Generate dummy data
 import numpy as np
 # For custom metrics
@@ -40,6 +40,59 @@ class HipJointV1(object):
         :return:
         """
         model = Sequential()
+        model.add(BatchNormalization(momentum=0.99))
+        model.add(Dense(self.input_size, input_dim=self.input_size))
+        model.add(Activation('tanh'))
+        # model.add(Dropout(rate=0.3))
+        model.add(BatchNormalization(momentum=0.99))
+        model.add(Dense(self.output_size))
+        model.add(Activation('softmax'))
+        model.compile(optimizer='rmsprop',
+                      loss='mse')
+
+        return model
+
+    def initialize_19(self):
+        """
+        Initialize the model
+        :return:
+        """
+        model = Sequential()
+        model.add(Dense(self.input_size, input_dim=self.input_size))
+        model.add(Activation('tanh'))
+        # model.add(Dropout(rate=0.3))
+        model.add(BatchNormalization(momentum=0.99))
+        model.add(Dense(self.output_size))
+        model.add(Activation('softmax'))
+        model.compile(optimizer='adam',
+                      loss='mse')
+
+        return model
+
+    def initialize_26(self):
+        """
+        Initialize the model
+        :return:
+        """
+        model = Sequential()
+        model.add(BatchNormalization(momentum=0.99))
+        model.add(Dense(self.input_size, input_dim=self.input_size))
+        model.add(Activation('softmax'))
+        model.add(Dropout(rate=0.1))
+        model.add(BatchNormalization(momentum=0.99))
+        model.add(Dense(self.output_size))
+        model.add(Activation('softmax'))
+        model.compile(optimizer='adam',
+                      loss='mse')
+
+        return model
+
+    def initialize_18(self):
+        """
+        Initialize the model
+        :return:
+        """
+        model = Sequential()
         model.add(Dense(self.input_size, input_dim=self.input_size))
         model.add(Activation('tanh'))
         model.add(BatchNormalization(momentum=0.99))
@@ -54,6 +107,25 @@ class HipJointV1(object):
                       loss='mse')
 
         return model
+
+    def initialize_svm(self):
+        # Build a classical model
+        model = Sequential()
+        model.add(Dense(self.input_size, input_dim=self.input_size))
+        model.add(Activation('tanh', name="activate_tanh"))
+        model.add(Dense(64, name="dense_relu", activation='tanh'))
+        model.add(Dense(3, name="SVM_final", activation='linear'))
+
+        # The extra metric is important for the evaluate function
+        model.compile(optimizer='rmsprop',
+                      loss='mse',
+                      metrics=['accuracy'])
+
+        from keras_svm.keras_svm import ModelSVMWrapper
+
+        # Wrap it in the ModelSVMWrapper
+        wrapper = ModelSVMWrapper(model)
+        return wrapper
 
     def fit_model(self, model, data, labels, epoch_times=10):
         # Train the model, iterating on the data in batches of 32 samples
@@ -185,7 +257,7 @@ class HipJointV1(object):
 if __name__ == "__main__":
     hv1 = HipJointV1(HipJointV1.MINIMUM_FEATURE_POINT_COUNT * 4, 3)
     ## If model exists, load model
-    model = hv1.initialize()
+    model = hv1.initialize_svm()
 
     ## 1. Open mat files and read the 4 * (50-150)
     ## 1.1. Sort the mat file
