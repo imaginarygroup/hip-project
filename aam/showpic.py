@@ -1,9 +1,9 @@
+import json
 import os
 import re
 
 import numpy as np
 import cv2
-from parse import parse
 
 ROOT_PATH = "/Users/xc5/PycharmProjects/hipjoint/aam/1"
 
@@ -26,7 +26,7 @@ def read_pts_vector(pts_f):
         pass
     return all_vec
 
-def display_pic(pic_file:str, pts_file:str):
+def display_pic(pic_file:str, pts_file:str, output_metric_file:str):
     with open(pts_file) as pts_f:
         pts_vec = read_pts_vector(pts_f)
 
@@ -45,12 +45,18 @@ def display_pic(pic_file:str, pts_file:str):
                                (pts_vec[i+1][0], pts_vec[i+1][1]),
                                (255 - i * 2, 0, 0), 5)
 
-        for i in range(10):
+        output_dict = {}
+        for i in range(1, 15):
+            output_dict[str(i)] = calc(i, pts_vec)
             print("Metric ", i,  " = ", calc(i, pts_vec))
 
-        img = cv2.putText(img, 'Metric 2 = %s' % str(calc(2, pts_vec)), (10, 50), cv2.FONT_HERSHEY_COMPLEX, 10, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.imshow('image', img)
-        cv2.waitKey(0)
+        with open(output_metric_file, "w") as f:
+            outstr = json.dumps(output_dict, indent=2)
+            f.write(outstr)
+
+        # img = cv2.putText(img, 'Metric 2 = %s' % str(calc(2, pts_vec)), (10, 50), cv2.FONT_HERSHEY_COMPLEX, 10, (255, 255, 255), 2, cv2.LINE_AA)
+        # cv2.imshow('image', img)
+        # cv2.waitKey(0)
 
 def point_distance(pts, n1:int, n2:int):
     return pow(pow(pts[n1][0] - pts[n2][0], 2) + pow(pts[n1][1] - pts[n2][1], 2), 0.5)
@@ -219,11 +225,13 @@ def batch_process_jpg(root_path):
     for root, dirs, files in os.walk(root_path):
         for file in files:
             if file.endswith(".jpg"):
-                display_pic(os.path.join(root,file), os.path.join(root,file.replace(".jpg", ".pts")))
+                display_pic(os.path.join(root,file),
+                            os.path.join(root,file.replace(".jpg", ".pts")),
+                            os.path.join(root,file.replace(".jpg", ".metric.json")))
                 pass
 
 
 if __name__ == "__main__":
-    flags = [i for i in dir(cv2) if i.startswith('COLOR_')]
-    print(flags)
+    #flags = [i for i in dir(cv2) if i.startswith('COLOR_')]
+    #print(flags)
     batch_process_jpg(ROOT_PATH)
