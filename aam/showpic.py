@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 import re
@@ -26,7 +27,7 @@ def read_pts_vector(pts_f):
         pass
     return all_vec
 
-def display_pic(pic_file:str, pts_file:str, output_metric_file:str):
+def display_pic(pic_file:str, pts_file:str, output_metric_file:str, all_data:list):
     with open(pts_file) as pts_f:
         pts_vec = read_pts_vector(pts_f)
 
@@ -46,13 +47,25 @@ def display_pic(pic_file:str, pts_file:str, output_metric_file:str):
                                (255 - i * 2, 0, 0), 5)
 
         output_dict = {}
+        out_arr = []
         for i in range(1, 15):
+            one_val = calc(i, pts_vec)
+            if (isinstance(one_val, int) or isinstance(one_val, float)):
+                out_arr.append(one_val)
+            elif (isinstance(one_val, list)):
+                for one_detail_val in one_val:
+                    out_arr.append(one_detail_val)
+            else:
+                raise Exception()
             output_dict[str(i)] = calc(i, pts_vec)
             print("Metric ", i,  " = ", calc(i, pts_vec))
 
-        with open(output_metric_file, "w") as f:
-            outstr = json.dumps(output_dict, indent=2)
-            f.write(outstr)
+        all_data.append(out_arr)
+
+        #
+        # with open(output_metric_file, "w") as f:
+        #     outstr = json.dumps(output_dict, indent=2)
+        #     f.write(outstr)
 
         # img = cv2.putText(img, 'Metric 2 = %s' % str(calc(2, pts_vec)), (10, 50), cv2.FONT_HERSHEY_COMPLEX, 10, (255, 255, 255), 2, cv2.LINE_AA)
         # cv2.imshow('image', img)
@@ -173,8 +186,11 @@ def calc(metric:int, pts:list):
         return dist14 / dist13
     if metric == 13:
         # 17, 18
-        width = 0
-        return width
+        [xa, ya] = get_middle_between_points(pts, 7, 10)
+        left = point_to_line_distance(pts, xa, ya , 8, 10)
+        [xa, ya] = get_middle_between_points(pts, 17, 20)
+        right = point_to_line_distance(pts, xa, ya , 18, 19)
+        return [left, right]
     if metric == 14:
         [xa, ya] = get_middle_between_points(pts, 9, 10)
         left = point_to_line_distance(pts, xa, ya , 7, 20)
@@ -222,13 +238,23 @@ def calc(metric:int, pts:list):
     """
 
 def batch_process_jpg(root_path):
+    all_data = []
+    all_files = []
     for root, dirs, files in os.walk(root_path):
         for file in files:
             if file.endswith(".jpg"):
+                all_files.append(file)
                 display_pic(os.path.join(root,file),
                             os.path.join(root,file.replace(".jpg", ".pts")),
-                            os.path.join(root,file.replace(".jpg", ".metric.json")))
+                            os.path.join(root,file.replace(".jpg", ".metric.json")),
+                            all_data)
                 pass
+    for i in range(len(all_data)):
+        all_data[i].insert(0, all_files[i])
+
+    with open(os.path.join(ROOT_PATH, "output-with-name.csv"), "w") as f:
+        csv_writer = csv.writer(f)
+        csv_writer.writerows(all_data)
 
 
 if __name__ == "__main__":
